@@ -79,7 +79,7 @@ class Mission:
         Returns:
             Mission: An instance of the Mission class
         """
-        
+
         (reference, cave_height, cave_depth) = generate_reference_and_limits(duration, scale)
         return cls(reference, cave_height, cave_depth)
 
@@ -102,8 +102,16 @@ class ClosedLoop:
         self.plant = plant
         self.controller = controller
 
-    def simulate(self,  mission: Mission, disturbances: np.ndarray) -> Trajectory:
-
+    def simulate(self, mission: Mission, disturbances: np.ndarray) -> Trajectory:
+        """
+        Simulate the closed-loop system for a given mission and disturbances.
+        Args:
+            mission (Mission): The mission to be executed.
+            disturbances (np.ndarray): Array of disturbances affecting the system.
+        Returns:
+            Trajectory: The trajectory of the submarine during the mission.
+        """
+        
         T = len(mission.reference)
         if len(disturbances) < T:
             raise ValueError("Disturbances must be at least as long as mission duration")
@@ -116,6 +124,8 @@ class ClosedLoop:
             positions[t] = self.plant.get_position()
             observation_t = self.plant.get_depth()
             # Call your controller here
+            error_t = mission.reference[t] - observation_t
+            actions[t] = self.controller(error_t)
             self.plant.transition(actions[t], disturbances[t])
 
         return Trajectory(positions)

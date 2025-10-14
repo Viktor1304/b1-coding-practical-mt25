@@ -111,7 +111,7 @@ class ClosedLoop:
         Returns:
             Trajectory: The trajectory of the submarine during the mission.
         """
-        
+
         T = len(mission.reference)
         if len(disturbances) < T:
             raise ValueError("Disturbances must be at least as long as mission duration")

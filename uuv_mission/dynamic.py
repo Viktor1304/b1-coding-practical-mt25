@@ -1,6 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from .terrain import generate_reference_and_limits
 
@@ -70,13 +71,30 @@ class Mission:
 
     @classmethod
     def random_mission(cls, duration: int, scale: float):
+        """
+        Generate a random mission with given duration and scale
+        Args:
+            duration (int): Length of the mission
+            scale (float): Scale of the terrain features
+        Returns:
+            Mission: An instance of the Mission class
+        """
+
         (reference, cave_height, cave_depth) = generate_reference_and_limits(duration, scale)
         return cls(reference, cave_height, cave_depth)
 
     @classmethod
     def from_csv(cls, file_name: str):
-        # You are required to implement this method
-        pass
+        """
+        Load a mission from a CSV file with columns: reference, cave_height, cave_depth
+        Args:
+            file_name (str): Path to the CSV file
+        Returns:
+            Mission: An instance of the Mission class
+        """
+
+        df = pd.read_csv(file_name)
+        return cls(df['reference'].to_numpy(), df['cave_height'].to_numpy(), df['cave_depth'].to_numpy())
 
 
 class ClosedLoop:
@@ -84,7 +102,15 @@ class ClosedLoop:
         self.plant = plant
         self.controller = controller
 
-    def simulate(self,  mission: Mission, disturbances: np.ndarray) -> Trajectory:
+    def simulate(self, mission: Mission, disturbances: np.ndarray) -> Trajectory:
+        """
+        Simulate the closed-loop system for a given mission and disturbances.
+        Args:
+            mission (Mission): The mission to be executed.
+            disturbances (np.ndarray): Array of disturbances affecting the system.
+        Returns:
+            Trajectory: The trajectory of the submarine during the mission.
+        """
 
         T = len(mission.reference)
         if len(disturbances) < T:
@@ -98,6 +124,8 @@ class ClosedLoop:
             positions[t] = self.plant.get_position()
             observation_t = self.plant.get_depth()
             # Call your controller here
+            error_t = mission.reference[t] - observation_t
+            actions[t] = self.controller(error_t)
             self.plant.transition(actions[t], disturbances[t])
 
         return Trajectory(positions)
